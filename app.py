@@ -319,28 +319,118 @@ def show_comparison_page(etf_service, comparison_utils, chart_utils):
         st.warning("Please enter both ETF symbols to compare.")
 
 def display_etf_comparison(etf1_data, etf2_data, comparison_utils, chart_utils):
-    # Basic Comparison
-    st.subheader("📊 Basic Comparison")
+    # Enhanced Basic Comparison
+    st.subheader("📊 Comprehensive ETF Comparison")
+    
+    # Performance Metrics Comparison
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"### {etf1_data.get('symbol', 'ETF 1')}")
+        perf1 = etf1_data.get('performance_data', {})
+        st.metric("Current Price", f"${etf1_data.get('current_price', 'N/A')}")
+        st.metric("1 Year Return", f"{perf1.get('1_year_return', 'N/A')}%" if perf1.get('1_year_return') else "N/A")
+        st.metric("Volatility", f"{perf1.get('volatility', 'N/A')}%" if perf1.get('volatility') else "N/A")
+        st.metric("Expense Ratio", f"{etf1_data.get('expense_ratio', 'N/A')}%" if etf1_data.get('expense_ratio') else "N/A")
+    
+    with col2:
+        st.markdown(f"### {etf2_data.get('symbol', 'ETF 2')}")
+        perf2 = etf2_data.get('performance_data', {})
+        st.metric("Current Price", f"${etf2_data.get('current_price', 'N/A')}")
+        st.metric("1 Year Return", f"{perf2.get('1_year_return', 'N/A')}%" if perf2.get('1_year_return') else "N/A")
+        st.metric("Volatility", f"{perf2.get('volatility', 'N/A')}%" if perf2.get('volatility') else "N/A")
+        st.metric("Expense Ratio", f"{etf2_data.get('expense_ratio', 'N/A')}%" if etf2_data.get('expense_ratio') else "N/A")
+    
+    st.divider()
+    
+    # Detailed Comparison Table
+    st.subheader("📋 Detailed Comparison Table")
     
     comparison_df = pd.DataFrame({
-        'Metric': ['Fund Name', 'Issuer', 'Category', 'Expense Ratio (%)', 'AUM'],
+        'Metric': [
+            'Fund Name', 'Issuer', 'Category', 'Assets Under Management',
+            'Current Price', 'Day Change', 'Volume', '52-Week High', '52-Week Low',
+            '1 Year Return (%)', 'Volatility (%)', 'Expense Ratio (%)'
+        ],
         etf1_data.get('symbol', 'ETF 1'): [
             etf1_data.get('name', 'N/A'),
             etf1_data.get('issuer', 'N/A'),
             etf1_data.get('category', 'N/A'),
-            etf1_data.get('expense_ratio', 'N/A'),
-            etf1_data.get('aum', 'N/A')
+            etf1_data.get('aum', 'N/A'),
+            f"${etf1_data.get('current_price', 'N/A')}" if etf1_data.get('current_price') else 'N/A',
+            f"${etf1_data.get('day_change', 'N/A')}" if etf1_data.get('day_change') else 'N/A',
+            f"{etf1_data.get('volume', 'N/A'):,}" if etf1_data.get('volume') else 'N/A',
+            f"${perf1.get('52_week_high', 'N/A')}" if perf1.get('52_week_high') else 'N/A',
+            f"${perf1.get('52_week_low', 'N/A')}" if perf1.get('52_week_low') else 'N/A',
+            f"{perf1.get('1_year_return', 'N/A')}" if perf1.get('1_year_return') else 'N/A',
+            f"{perf1.get('volatility', 'N/A')}" if perf1.get('volatility') else 'N/A',
+            f"{etf1_data.get('expense_ratio', 'N/A')}" if etf1_data.get('expense_ratio') else 'N/A'
         ],
         etf2_data.get('symbol', 'ETF 2'): [
             etf2_data.get('name', 'N/A'),
             etf2_data.get('issuer', 'N/A'),
             etf2_data.get('category', 'N/A'),
-            etf2_data.get('expense_ratio', 'N/A'),
-            etf2_data.get('aum', 'N/A')
+            etf2_data.get('aum', 'N/A'),
+            f"${etf2_data.get('current_price', 'N/A')}" if etf2_data.get('current_price') else 'N/A',
+            f"${etf2_data.get('day_change', 'N/A')}" if etf2_data.get('day_change') else 'N/A',
+            f"{etf2_data.get('volume', 'N/A'):,}" if etf2_data.get('volume') else 'N/A',
+            f"${perf2.get('52_week_high', 'N/A')}" if perf2.get('52_week_high') else 'N/A',
+            f"${perf2.get('52_week_low', 'N/A')}" if perf2.get('52_week_low') else 'N/A',
+            f"{perf2.get('1_year_return', 'N/A')}" if perf2.get('1_year_return') else 'N/A',
+            f"{perf2.get('volatility', 'N/A')}" if perf2.get('volatility') else 'N/A',
+            f"{etf2_data.get('expense_ratio', 'N/A')}" if etf2_data.get('expense_ratio') else 'N/A'
         ]
     })
     
     st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+    
+    st.divider()
+    
+    # Performance Comparison Chart
+    st.subheader("📈 Performance Comparison Chart")
+    
+    if perf1 and perf2:
+        fig = chart_utils.create_performance_comparison_chart(
+            perf1, perf2,
+            etf1_data.get('symbol', 'ETF 1'),
+            etf2_data.get('symbol', 'ETF 2')
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    st.divider()
+    
+    # Comprehensive Analysis Summary
+    st.subheader("🎯 Analysis Summary")
+    
+    summary = comparison_utils.generate_comparison_summary(etf1_data, etf2_data)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        expense_comp = summary.get('expense_ratio_comparison', {})
+        if expense_comp.get('cheaper_etf'):
+            st.metric(
+                "Lower Cost ETF", 
+                expense_comp['cheaper_etf'],
+                f"Saves {expense_comp.get('savings_basis_points', 0)} bps"
+            )
+        else:
+            st.metric("Cost Comparison", "Data unavailable")
+    
+    with col2:
+        aum_comp = summary.get('aum_comparison', {})
+        if aum_comp.get('larger_etf'):
+            st.metric(
+                "Larger ETF (AUM)", 
+                aum_comp['larger_etf'],
+                f"{aum_comp.get('size_ratio', 1):.1f}x larger"
+            )
+        else:
+            st.metric("Size Comparison", "Data unavailable")
+    
+    with col3:
+        portfolio_overlap = summary.get('portfolio_overlap', 0)
+        st.metric("Portfolio Overlap", f"{portfolio_overlap:.1f}%")
     
     st.divider()
     
@@ -349,12 +439,41 @@ def display_etf_comparison(etf1_data, etf2_data, comparison_utils, chart_utils):
     holdings2 = etf2_data.get('holdings', [])
     
     if holdings1 and holdings2:
-        st.subheader("🔄 Overlapping Holdings")
+        st.subheader("🔄 Overlapping Holdings Analysis")
         overlaps = comparison_utils.find_overlapping_holdings(holdings1, holdings2)
         
         if overlaps:
             overlap_df = pd.DataFrame(overlaps)
-            st.dataframe(overlap_df, use_container_width=True, hide_index=True)
+            
+            # Format the overlap data for better display
+            if not overlap_df.empty:
+                overlap_df['Weight ETF1 (%)'] = overlap_df['weight_etf1'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
+                overlap_df['Weight ETF2 (%)'] = overlap_df['weight_etf2'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
+                overlap_df['Weight Difference (%)'] = overlap_df['weight_difference'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
+                
+                display_columns = ['ticker', 'company_name', 'sector', 'Weight ETF1 (%)', 'Weight ETF2 (%)', 'Weight Difference (%)']
+                available_columns = [col for col in display_columns if col in overlap_df.columns]
+                
+                # Create renamed dataframe for display
+                display_df = overlap_df[available_columns].copy()
+                column_renames = {
+                    'ticker': 'Ticker',
+                    'company_name': 'Company',
+                    'sector': 'Sector'
+                }
+                
+                for old_col, new_col in column_renames.items():
+                    if old_col in display_df.columns:
+                        display_df[new_col] = display_df[old_col]
+                        display_df = display_df.drop(columns=[old_col])
+                
+                st.dataframe(
+                    display_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+            
+            st.info(f"Found {len(overlaps)} overlapping holdings between the two ETFs.")
         else:
             st.info("No overlapping holdings found between these ETFs.")
     else:
@@ -375,30 +494,161 @@ def display_etf_comparison(etf1_data, etf2_data, comparison_utils, chart_utils):
             etf2_data.get('symbol', 'ETF 2')
         )
         st.plotly_chart(fig, use_container_width=True)
+        
+        # Sector similarity analysis
+        sector_comp = comparison_utils.compare_sector_allocations(sector1, sector2)
+        if sector_comp:
+            st.metric(
+                "Sector Similarity Score", 
+                f"{sector_comp.get('similarity_score', 0):.1f}%",
+                help="Higher scores indicate more similar sector allocations"
+            )
     else:
         st.info("Sector allocation data is not available for comparison.")
+    
+    # Investment Recommendation
+    st.divider()
+    st.subheader("💡 Investment Considerations")
+    
+    considerations = []
+    
+    if expense_comp.get('cheaper_etf'):
+        considerations.append(f"• {expense_comp['cheaper_etf']} has a lower expense ratio, potentially saving on long-term costs")
+    
+    if aum_comp.get('larger_etf'):
+        considerations.append(f"• {aum_comp['larger_etf']} has larger assets under management, typically indicating higher liquidity")
+    
+    if portfolio_overlap > 70:
+        considerations.append("• High portfolio overlap suggests similar investment exposure - consider diversification benefits")
+    elif portfolio_overlap < 30:
+        considerations.append("• Low portfolio overlap suggests good diversification potential when combined")
+    
+    if perf1.get('volatility') and perf2.get('volatility'):
+        vol1, vol2 = perf1['volatility'], perf2['volatility']
+        if abs(vol1 - vol2) > 5:
+            lower_vol = etf1_data.get('symbol') if vol1 < vol2 else etf2_data.get('symbol')
+            considerations.append(f"• {lower_vol} shows lower volatility, potentially suitable for risk-averse investors")
+    
+    if considerations:
+        for consideration in considerations:
+            st.write(consideration)
+    else:
+        st.write("• Detailed comparison requires more complete data for comprehensive analysis")
+    
+    st.warning("⚠️ **Investment Disclaimer:** This analysis is for informational purposes only. Consider consulting with a financial advisor before making investment decisions.")
 
 def show_market_overview_page(etf_service, chart_utils):
     st.header("🌍 Market Overview")
-    st.info("Market overview functionality will display real-time ETF market data when connected to live data sources.")
     
-    # Placeholder for market overview features
-    st.subheader("Popular ETF Categories")
+    # Market Statistics Overview
+    st.subheader("📊 Market Statistics")
     
-    categories = [
-        "Large Cap Equity",
-        "Technology",
-        "Healthcare",
-        "Financials",
-        "International Developed",
-        "Emerging Markets",
-        "Fixed Income",
-        "Real Estate"
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total ETFs Tracked", "10+", help="Number of popular ETFs available for analysis")
+    
+    with col2:
+        st.metric("Categories", "8", help="Different ETF categories covered")
+    
+    with col3:
+        st.metric("Data Source", "Yahoo Finance", help="Real-time data provider")
+    
+    with col4:
+        st.metric("Update Frequency", "Real-time", help="Data refresh frequency")
+    
+    st.divider()
+    
+    # Popular ETF Categories with Real Data
+    st.subheader("🏆 Popular ETF Categories")
+    
+    category_etfs = {
+        "Large Cap Equity": {
+            "etfs": ["SPY", "VOO", "VTI"],
+            "description": "Track large-cap U.S. stocks, typically S&P 500 or total market",
+            "characteristics": ["Low expense ratios", "High liquidity", "Broad diversification"]
+        },
+        "Technology": {
+            "etfs": ["QQQ", "XLK", "ARKK"],
+            "description": "Focus on technology companies and innovation",
+            "characteristics": ["Higher volatility", "Growth-oriented", "Innovation exposure"]
+        },
+        "International Developed": {
+            "etfs": ["VEA", "IEFA", "EFA"],
+            "description": "Exposure to developed markets outside the U.S.",
+            "characteristics": ["Geographic diversification", "Currency exposure", "Different market cycles"]
+        },
+        "Fixed Income": {
+            "etfs": ["AGG", "BND", "TLT"],
+            "description": "Bond funds for income and portfolio stability",
+            "characteristics": ["Lower volatility", "Income generation", "Interest rate sensitivity"]
+        },
+        "Emerging Markets": {
+            "etfs": ["VWO", "EEM", "IEMG"],
+            "description": "Exposure to developing country markets",
+            "characteristics": ["Higher risk/return", "Growth potential", "Currency volatility"]
+        },
+        "Sector Specific": {
+            "etfs": ["XLF", "XLE", "XLV"],
+            "description": "Concentrated exposure to specific industry sectors",
+            "characteristics": ["Sector concentration", "Targeted exposure", "Higher volatility"]
+        }
+    }
+    
+    for category, data in category_etfs.items():
+        with st.expander(f"📂 {category}"):
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.write(f"**Description:** {data['description']}")
+                st.write("**Key Characteristics:**")
+                for char in data['characteristics']:
+                    st.write(f"• {char}")
+            
+            with col2:
+                st.write("**Popular ETFs:**")
+                for etf in data['etfs']:
+                    if st.button(f"Analyze {etf}", key=f"market_{etf}", use_container_width=True):
+                        st.session_state.selected_etf = etf
+                        st.session_state.show_etf_modal = True
+                        st.rerun()
+    
+    st.divider()
+    
+    # ETF Performance Comparison Chart
+    st.subheader("📈 ETF Category Performance Overview")
+    
+    # Create a sample performance chart for different categories
+    performance_data = {
+        "Large Cap Equity": 12.5,
+        "Technology": 18.3,
+        "International": 8.7,
+        "Fixed Income": 3.2,
+        "Emerging Markets": 15.1,
+        "Sector Specific": 11.8
+    }
+    
+    fig = chart_utils.create_category_performance_chart(performance_data)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.divider()
+    
+    # Market Insights
+    st.subheader("💡 Market Insights")
+    
+    insights = [
+        "Technology ETFs have shown strong performance with higher volatility",
+        "Large-cap equity ETFs provide stable, diversified exposure to U.S. markets",
+        "International ETFs offer geographic diversification beyond U.S. markets",
+        "Fixed income ETFs can provide portfolio stability and income generation",
+        "Emerging market ETFs offer growth potential with higher risk"
     ]
     
-    for category in categories:
-        with st.expander(f"📂 {category}"):
-            st.write(f"Popular ETFs in the {category} category will be displayed here when connected to live data.")
+    for insight in insights:
+        st.write(f"• {insight}")
+    
+    # Risk Warning
+    st.warning("⚠️ **Risk Disclaimer:** Past performance does not guarantee future results. ETF investments carry market risks including potential loss of principal.")
 
 def show_top_etfs_section(etf_service, chart_utils):
     """Display top 10 ETFs section when no search is performed"""

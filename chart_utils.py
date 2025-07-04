@@ -359,3 +359,117 @@ class ChartUtils:
         )
         
         return fig
+    
+    def create_category_performance_chart(self, performance_data: Dict) -> go.Figure:
+        """
+        Create a performance chart for different ETF categories
+        
+        Args:
+            performance_data: Dictionary with category names and performance percentages
+            
+        Returns:
+            Plotly figure object
+        """
+        if not performance_data:
+            return self._create_empty_chart("No performance data available")
+        
+        categories = list(performance_data.keys())
+        performance = list(performance_data.values())
+        
+        # Create horizontal bar chart with color coding
+        colors = [self.color_palette[i % len(self.color_palette)] for i in range(len(categories))]
+        
+        fig = go.Figure(data=[go.Bar(
+            y=categories,
+            x=performance,
+            orientation='h',
+            marker=dict(color=colors),
+            text=[f"{p:.1f}%" for p in performance],
+            textposition='auto'
+        )])
+        
+        fig.update_layout(
+            title="ETF Category Performance (1 Year Return %)",
+            title_x=0.5,
+            xaxis_title="Return (%)",
+            yaxis_title="ETF Category",
+            height=400,
+            font=dict(size=12),
+            margin=dict(l=150)
+        )
+        
+        return fig
+    
+    def create_performance_comparison_chart(self, perf1: Dict, perf2: Dict, 
+                                          etf1_symbol: str, etf2_symbol: str) -> go.Figure:
+        """
+        Create a side-by-side performance comparison chart
+        
+        Args:
+            perf1: Performance data for first ETF
+            perf2: Performance data for second ETF
+            etf1_symbol: First ETF symbol
+            etf2_symbol: Second ETF symbol
+            
+        Returns:
+            Plotly figure object
+        """
+        if not perf1 and not perf2:
+            return self._create_empty_chart("No performance data available for comparison")
+        
+        # Extract common metrics
+        metrics = ['1_year_return', 'volatility', '52_week_high', '52_week_low']
+        metric_labels = ['1 Year Return (%)', 'Volatility (%)', '52W High ($)', '52W Low ($)']
+        
+        values1 = []
+        values2 = []
+        available_metrics = []
+        available_labels = []
+        
+        for metric, label in zip(metrics, metric_labels):
+            val1 = perf1.get(metric)
+            val2 = perf2.get(metric)
+            
+            if val1 is not None or val2 is not None:
+                values1.append(val1 if val1 is not None else 0)
+                values2.append(val2 if val2 is not None else 0)
+                available_metrics.append(metric)
+                available_labels.append(label)
+        
+        if not available_metrics:
+            return self._create_empty_chart("No comparable performance metrics available")
+        
+        fig = go.Figure()
+        
+        # Add bars for first ETF
+        fig.add_trace(go.Bar(
+            name=etf1_symbol,
+            x=available_labels,
+            y=values1,
+            marker=dict(color=self.color_palette[0]),
+            text=[f"{v:.2f}" if v != 0 else "N/A" for v in values1],
+            textposition='auto'
+        ))
+        
+        # Add bars for second ETF
+        fig.add_trace(go.Bar(
+            name=etf2_symbol,
+            x=available_labels,
+            y=values2,
+            marker=dict(color=self.color_palette[1]),
+            text=[f"{v:.2f}" if v != 0 else "N/A" for v in values2],
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            title=f"Performance Comparison: {etf1_symbol} vs {etf2_symbol}",
+            title_x=0.5,
+            xaxis_title="Performance Metrics",
+            yaxis_title="Value",
+            barmode='group',
+            height=400,
+            font=dict(size=12),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        return fig

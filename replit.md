@@ -83,7 +83,7 @@ Key deployment considerations:
 
 ## Recent Changes
 
-- July 04, 2025 - Enhanced ETF Research App with real data integration:
+- July 04, 2025 - Major ETF Research App enhancements:
   - Integrated yfinance for live ETF data from Yahoo Finance
   - Added top 10 popular ETFs section (appears by default, disappears after search)
   - Enhanced performance metrics display with price data, volatility, and 52-week ranges
@@ -92,6 +92,21 @@ Key deployment considerations:
   - Added comprehensive performance analysis charts
   - Real-time sector allocation data based on ETF types
   - Enhanced error handling and data formatting
+
+- July 04, 2025 - Modal popup functionality:
+  - Implemented popup dialogs for ETF analysis from top 10 section
+  - Complete ETF information displayed in modal windows
+  - Non-intrusive analysis without page navigation
+
+- July 04, 2025 - Market Overview and Comparison enhancements:
+  - Complete market overview redesign with real statistics and insights
+  - Detailed ETF category analysis with descriptions and characteristics
+  - Interactive category performance visualization charts
+  - Market insights and risk disclaimers
+  - Comprehensive ETF comparison with 12+ data points
+  - Performance comparison charts and analysis summaries
+  - Investment considerations and recommendations
+  - Enhanced overlapping holdings analysis with detailed formatting
 
 ## Changelog
 

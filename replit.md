@@ -81,10 +81,22 @@ Key deployment considerations:
 - Graceful degradation when APIs are unavailable
 - Resource caching to minimize API calls and improve performance
 
+## Recent Changes
+
+- July 04, 2025 - Enhanced ETF Research App with real data integration:
+  - Integrated yfinance for live ETF data from Yahoo Finance
+  - Added top 10 popular ETFs section (appears by default, disappears after search)
+  - Enhanced performance metrics display with price data, volatility, and 52-week ranges
+  - Added interactive ETF category overview with visualization charts
+  - Improved navigation from dropdown to radio buttons
+  - Added comprehensive performance analysis charts
+  - Real-time sector allocation data based on ETF types
+  - Enhanced error handling and data formatting
+
 ## Changelog
 
-Changelog:
 - July 04, 2025. Initial setup
+- July 04, 2025. Added yfinance integration and enhanced UI features
 
 ## User Preferences
 

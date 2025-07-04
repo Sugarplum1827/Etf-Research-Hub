@@ -75,9 +75,12 @@ def show_etf_analysis_page(etf_service, chart_utils):
     with col2:
         search_button = st.button("🔍 Search", type="primary")
     
-    if search_term or search_button:
+    # Show ETF search results or default content
+    has_searched = search_term or search_button
+    
+    if has_searched:
         if search_term:
-            with st.spinner("Searching for ETF data..."):
+            with st.spinner("Fetching real-time ETF data..."):
                 etf_data = etf_service.search_etf(search_term)
             
             if etf_data:
@@ -87,6 +90,9 @@ def show_etf_analysis_page(etf_service, chart_utils):
                 st.info("💡 Try searching with popular ETF symbols like: VTI, VOO, SPY, QQQ, ARKK, VEA, VWO")
         else:
             st.warning("Please enter an ETF symbol or name to search.")
+    else:
+        # Show top 10 ETFs when no search is performed
+        show_top_etfs_section(etf_service, chart_utils)
 
 def display_etf_details(etf_data, chart_utils):
     # Fund Overview Section
@@ -105,17 +111,52 @@ def display_etf_details(etf_data, chart_utils):
     
     with col3:
         expense_ratio = etf_data.get('expense_ratio', 'N/A')
-        if expense_ratio != 'N/A':
-            st.metric("Expense Ratio", f"{expense_ratio}%")
+        if expense_ratio != 'N/A' and expense_ratio is not None:
+            st.metric("Expense Ratio", f"{expense_ratio:.4f}%")
         else:
             st.metric("Expense Ratio", "N/A")
     
     with col4:
         aum = etf_data.get('aum', 'N/A')
-        if aum != 'N/A':
-            st.metric("Assets Under Management", f"${aum}")
-        else:
-            st.metric("Assets Under Management", "N/A")
+        st.metric("Assets Under Management", aum)
+    
+    # Price and Performance Metrics (if available)
+    performance_data = etf_data.get('performance_data', {})
+    if performance_data:
+        st.subheader("📈 Price & Performance")
+        
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            current_price = etf_data.get('current_price')
+            if current_price:
+                st.metric("Current Price", f"${current_price:.2f}")
+        
+        with col2:
+            day_change = etf_data.get('day_change')
+            day_change_percent = etf_data.get('day_change_percent')
+            if day_change and day_change_percent:
+                st.metric("Day Change", f"${day_change:.2f}", f"{day_change_percent:.2f}%")
+        
+        with col3:
+            year_return = performance_data.get('1_year_return')
+            if year_return:
+                st.metric("1 Year Return", f"{year_return:.2f}%")
+        
+        with col4:
+            volatility = performance_data.get('volatility')
+            if volatility:
+                st.metric("Volatility", f"{volatility:.2f}%")
+        
+        with col5:
+            volume = etf_data.get('volume')
+            if volume:
+                if volume >= 1e6:
+                    st.metric("Volume", f"{volume/1e6:.1f}M")
+                elif volume >= 1e3:
+                    st.metric("Volume", f"{volume/1e3:.1f}K")
+                else:
+                    st.metric("Volume", f"{volume:,.0f}")
     
     # Description
     if etf_data.get('description'):
@@ -136,13 +177,27 @@ def display_etf_details(etf_data, chart_utils):
                 holdings_df['Weight (%)'] = holdings_df['weight'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
             
             # Display the table
+            display_columns = ['ticker', 'company_name', 'Weight (%)', 'sector', 'market_value']
+            available_columns = [col for col in display_columns if col in holdings_df.columns]
+            
+            column_mapping = {
+                'ticker': 'Ticker',
+                'company_name': 'Company Name',
+                'sector': 'Sector',
+                'market_value': 'Market Value'
+            }
+            
+            # Create display dataframe with proper column mapping
+            display_df = holdings_df[available_columns].copy()
+            
+            # Rename columns one by one to avoid the typing issue
+            for old_name, new_name in column_mapping.items():
+                if old_name in display_df.columns:
+                    display_df[new_name] = display_df[old_name]
+                    display_df = display_df.drop(columns=[old_name])
+            
             st.dataframe(
-                holdings_df[['ticker', 'company_name', 'Weight (%)', 'sector', 'market_value']].rename(columns={
-                    'ticker': 'Ticker',
-                    'company_name': 'Company Name',
-                    'sector': 'Sector',
-                    'market_value': 'Market Value'
-                }),
+                display_df,
                 use_container_width=True,
                 hide_index=True
             )
@@ -172,6 +227,31 @@ def display_etf_details(etf_data, chart_utils):
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Sector allocation data is not available for this ETF.")
+    
+    # Performance Chart Section
+    performance_data = etf_data.get('performance_data', {})
+    if performance_data:
+        st.divider()
+        st.subheader("📈 Performance Analysis")
+        
+        fig = chart_utils.create_performance_chart(performance_data, etf_data.get('symbol', 'ETF'))
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Performance insights
+        col1, col2 = st.columns(2)
+        with col1:
+            if performance_data.get('52_week_high') and performance_data.get('52_week_low'):
+                st.metric(
+                    "52-Week Range", 
+                    f"${performance_data['52_week_low']:.2f} - ${performance_data['52_week_high']:.2f}"
+                )
+        
+        with col2:
+            if performance_data.get('current_vs_52w_high'):
+                st.metric(
+                    "% from 52W High", 
+                    f"{performance_data['current_vs_52w_high']:.2f}%"
+                )
 
 def show_comparison_page(etf_service, comparison_utils, chart_utils):
     st.header("⚖️ ETF Comparison")
@@ -291,6 +371,66 @@ def show_market_overview_page(etf_service, chart_utils):
     for category in categories:
         with st.expander(f"📂 {category}"):
             st.write(f"Popular ETFs in the {category} category will be displayed here when connected to live data.")
+
+def show_top_etfs_section(etf_service, chart_utils):
+    """Display top 10 ETFs section when no search is performed"""
+    st.subheader("🏆 Top 10 Popular ETFs")
+    st.markdown("Explore some of the most popular ETFs in the market. Click on any ETF to learn more!")
+    
+    # Get popular ETFs list
+    popular_etfs = etf_service.get_popular_etfs()
+    
+    # Create a grid layout for ETF cards
+    cols = st.columns(5)
+    
+    for i, etf_symbol in enumerate(popular_etfs):
+        col_idx = i % 5
+        with cols[col_idx]:
+            with st.container():
+                st.markdown(f"""
+                <div style="
+                    border: 1px solid #ddd;
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin: 5px 0;
+                    text-align: center;
+                    background-color: #f9f9f9;
+                ">
+                    <h4 style="margin: 0; color: #1f77b4;">{etf_symbol}</h4>
+                    <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                        Click to analyze
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button(f"Analyze {etf_symbol}", key=f"btn_{etf_symbol}", use_container_width=True):
+                    # Fetch and display ETF data
+                    with st.spinner(f"Loading {etf_symbol} data..."):
+                        etf_data = etf_service.search_etf(etf_symbol)
+                    
+                    if etf_data:
+                        st.rerun()  # This will trigger a refresh and show the search results
+    
+    st.divider()
+    
+    # Add ETF categories overview
+    st.subheader("📊 ETF Categories Overview")
+    
+    category_data = {
+        'Large Cap Equity': ['SPY', 'VOO', 'VTI'],
+        'Technology': ['QQQ', 'XLK', 'ARKK'],
+        'International': ['VEA', 'VWO', 'IEFA'],
+        'Fixed Income': ['AGG', 'BND', 'TLT'],
+        'Sector Specific': ['XLF', 'XLE', 'XLV']
+    }
+    
+    for category, etfs in category_data.items():
+        with st.expander(f"📂 {category}"):
+            st.write(f"Popular ETFs: {', '.join(etfs)}")
+            
+            # Create a simple visualization of the category
+            fig = chart_utils.create_category_overview_chart(category, etfs)
+            st.plotly_chart(fig, use_container_width=True)
 
 if __name__ == "__main__":
     main()

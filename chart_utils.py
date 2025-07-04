@@ -67,7 +67,8 @@ class ChartUtils:
             return self._create_empty_chart("No sector allocation data available")
         
         # Prepare data and sort by percentage
-        df = pd.DataFrame(list(sector_data.items()), columns=['Sector', 'Percentage'])
+        sector_items = list(sector_data.items())
+        df = pd.DataFrame(sector_items, columns=['Sector', 'Percentage'])
         df = df.sort_values('Percentage', ascending=True)
         
         # Create horizontal bar chart
@@ -273,6 +274,88 @@ class ChartUtils:
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
             plot_bgcolor='white'
+        )
+        
+        return fig
+    
+    def create_category_overview_chart(self, category: str, etf_list: List[str]) -> go.Figure:
+        """
+        Create a simple overview chart for ETF category
+        
+        Args:
+            category: Category name
+            etf_list: List of ETF symbols in the category
+            
+        Returns:
+            Plotly figure object
+        """
+        if not etf_list:
+            return self._create_empty_chart("No ETFs available in this category")
+        
+        # Create a simple bar chart showing ETF count
+        fig = go.Figure(data=[go.Bar(
+            x=etf_list,
+            y=[1] * len(etf_list),  # Equal height for all ETFs
+            marker=dict(color=self.color_palette[0]),
+            text=etf_list,
+            textposition='auto'
+        )])
+        
+        fig.update_layout(
+            title=f"ETFs in {category} Category",
+            title_x=0.5,
+            xaxis_title="ETF Symbol",
+            yaxis_title="",
+            yaxis=dict(visible=False),
+            height=300,
+            font=dict(size=12),
+            showlegend=False
+        )
+        
+        return fig
+    
+    def create_performance_chart(self, performance_data: Dict, etf_symbol: str) -> go.Figure:
+        """
+        Create a performance metrics chart
+        
+        Args:
+            performance_data: Dictionary with performance metrics
+            etf_symbol: ETF symbol for the title
+            
+        Returns:
+            Plotly figure object
+        """
+        if not performance_data:
+            return self._create_empty_chart("No performance data available")
+        
+        metrics = []
+        values = []
+        
+        for key, value in performance_data.items():
+            if value is not None:
+                # Format metric names for display
+                metric_name = key.replace('_', ' ').title()
+                metrics.append(metric_name)
+                values.append(value)
+        
+        if not metrics:
+            return self._create_empty_chart("No performance metrics available")
+        
+        fig = go.Figure(data=[go.Bar(
+            x=metrics,
+            y=values,
+            marker=dict(color=self.color_palette[4]),
+            text=[f"{v:.2f}" for v in values],
+            textposition='auto'
+        )])
+        
+        fig.update_layout(
+            title=f"Performance Metrics - {etf_symbol}",
+            title_x=0.5,
+            xaxis_title="Metric",
+            yaxis_title="Value",
+            height=400,
+            font=dict(size=12)
         )
         
         return fig

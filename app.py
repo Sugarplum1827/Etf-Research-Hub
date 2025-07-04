@@ -44,9 +44,12 @@ def main():
     
     # Sidebar navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox(
+    
+    # Use radio buttons for better navigation experience
+    page = st.sidebar.radio(
         "Select Page",
-        ["ETF Search & Analysis", "ETF Comparison", "Market Overview"]
+        ["ETF Search & Analysis", "ETF Comparison", "Market Overview"],
+        index=0
     )
     
     if page == "ETF Search & Analysis":

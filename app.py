@@ -25,6 +25,30 @@ def get_chart_utils():
 def get_comparison_utils():
     return ComparisonUtils()
 
+@st.dialog("ETF Analysis")
+def show_etf_modal(etf_service, chart_utils):
+    """Display ETF information in a modal dialog"""
+    if 'selected_etf' in st.session_state:
+        etf_symbol = st.session_state.selected_etf
+        
+        with st.spinner(f"Loading {etf_symbol} data..."):
+            etf_data = etf_service.search_etf(etf_symbol)
+        
+        if etf_data:
+            # Display ETF details in the modal
+            display_etf_details(etf_data, chart_utils)
+        else:
+            st.error(f"Could not load data for {etf_symbol}")
+        
+        # Close button
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("Close", use_container_width=True):
+                st.session_state.show_etf_modal = False
+                if 'selected_etf' in st.session_state:
+                    del st.session_state.selected_etf
+                st.rerun()
+
 def main():
     st.set_page_config(
         page_title="ETF Research Center",
@@ -58,6 +82,10 @@ def main():
         show_comparison_page(etf_service, comparison_utils, chart_utils)
     else:
         show_market_overview_page(etf_service, chart_utils)
+    
+    # Handle ETF modal display
+    if st.session_state.get('show_etf_modal', False):
+        show_etf_modal(etf_service, chart_utils)
 
 def show_etf_analysis_page(etf_service, chart_utils):
     st.header("🔍 ETF Search & Analysis")
@@ -404,12 +432,10 @@ def show_top_etfs_section(etf_service, chart_utils):
                 """, unsafe_allow_html=True)
                 
                 if st.button(f"Analyze {etf_symbol}", key=f"btn_{etf_symbol}", use_container_width=True):
-                    # Fetch and display ETF data
-                    with st.spinner(f"Loading {etf_symbol} data..."):
-                        etf_data = etf_service.search_etf(etf_symbol)
-                    
-                    if etf_data:
-                        st.rerun()  # This will trigger a refresh and show the search results
+                    # Store the selected ETF in session state to show in modal
+                    st.session_state.selected_etf = etf_symbol
+                    st.session_state.show_etf_modal = True
+                    st.rerun()
     
     st.divider()
     
